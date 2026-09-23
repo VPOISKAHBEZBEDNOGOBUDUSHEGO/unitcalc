@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Калькулятор unit-экономики товара на маркетплейсе: прибыль, маржа, точка безубыточности и стресс-сценарии.">
+  <title>UnitCalc - unit-экономика маркетплейса</title>
+  <link rel="stylesheet" href="src/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#top" aria-label="UnitCalc - к началу страницы">
+      <span>UnitCalc</span>
+    </a>
+  </header>
+
+  <main id="top">
+    <section class="intro">
+      <h1>Unit-экономика маркетплейса</h1>
+      <p>Оценка рентабельности товара с учётом комиссий, логистики, рекламы и операционных расходов.</p>
+    </section>
+
+    <div class="workspace">
+      <section class="panel input-panel" aria-labelledby="input-title">
+        <div class="section-heading">
+          <div>
+            <h2 id="input-title">Параметры расчёта</h2>
+            <p class="live-note">Результаты обновляются автоматически.</p>
+          </div>
+          <div class="example-tools">
+            <button class="text-button" id="load-example" type="button" title="Заполняет все поля новым случайным примером.">Заполнить примером</button>
+            <div class="example-actions">
+              <div class="example-scenarios" aria-label="Примеры с заданным результатом">
+                <button class="example-scenario" type="button" data-example-mode="positive" data-tooltip="Положительный пример: маржа примерно 12-22%." aria-label="Заполнить положительным примером">+</button>
+                <button class="example-scenario" type="button" data-example-mode="balanced" data-tooltip="Пограничный пример: небольшой запас, маржа примерно 2-8%." aria-label="Заполнить пограничным примером">=</button>
+                <button class="example-scenario" type="button" data-example-mode="negative" data-tooltip="Пессимистичный пример: расходы выше цены продажи." aria-label="Заполнить пессимистичным примером">-</button>
+              </div>
+              <button class="text-button clear-button" id="clear-form" type="button">Очистить поля</button>
+            </div>
+          </div>
+        </div>
+
+        <p class="form-error" id="form-error" role="alert" hidden></p>
+
+        <form id="calculator-form" autocomplete="off" novalidate>
+          <details class="input-section" open>
+            <summary>Товар и площадка</summary>
+            <div class="input-section__body form-grid form-grid--two">
+              <label class="field field--wide">
+                <span>Название товара</span>
+                <input name="product" type="text" value="Набор конфет" maxlength="100" autocomplete="off">
+              </label>
+              <div class="field">
+                <span id="category-label">Категория</span>
+                <select name="category" data-custom-select aria-labelledby="category-label">
+                  <option value="">Не выбрана</option>
+                  <option selected>Продукты питания</option>
+                  <option>Одежда и обувь</option>
+                  <option>Дом и кухня</option>
+                  <option>Красота и уход</option>
+                  <option>Электроника</option>
+                  <option>Детские товары</option>
+                  <option>Спорт</option>
+                  <option>Автотовары</option>
+                  <option>Зоотовары</option>
+                  <option>Канцтовары</option>
+                  <option>Другое</option>
+                </select>
+              </div>
+              <label class="field">
+                <span>Бренд / производитель</span>
+                <input name="brand" type="text" value="" maxlength="100" autocomplete="off">
+              </label>
+              <div class="field">
+                <span id="country-label">Страна</span>
+                <select name="country" data-custom-select aria-labelledby="country-label">
+                  <option value="">Не выбрана</option>
+                  <option selected>Россия</option>
+                  <option>Казахстан</option>
+                  <option>Узбекистан</option>
+                </select>
+              </div>
+              <div class="field">
+                <span id="marketplace-label">Маркетплейс</span>
+                <select name="marketplace" data-custom-select aria-labelledby="marketplace-label">
+                  <option value="">Не выбран</option>
+                  <option selected>Wildberries</option>
+                  <option>Ozon</option>
+                  <option>Яндекс Маркет</option>
+                  <option>Мегамаркет</option>
+                </select>
+              </div>
+              <div class="field field--wide product-image-field">
+                <span>Фото товара</span>
+                <div class="product-image-control">
+                  <div class="product-image-preview" id="product-image-preview">
+                    <img id="product-image" alt="" hidden>
+                    <span id="product-image-placeholder">Фото не выбрано</span>
+                  </div>
+                  <div class="product-image-actions">
+                    <label class="button button--secondary upload-button">
+                      Выбрать фото
+                      <input id="product-image-input" name="productImage" type="file" accept="image/png,image/jpeg,image/webp">
+                    </label>
+                    <button class="text-button" id="remove-product-image" type="button" hidden>Удалить фото</button>
+                    <small>JPG, PNG или WebP, до 5 МБ.</small>
+                    <span class="field-validation" id="product-image-error" hidden></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </details>
+
+          <details class="input-section" open>
+            <summary>Цена и основные расходы</summary>
+            <div class="input-section__body form-grid form-grid--two">
+              <label class="field">
+                <span>Цена продажи, ₽</span>
+                <input name="salePrice" type="number" min="0.01" step="0.01" value="1500" required inputmode="decimal">
+                <small>Фактическая цена после вашей скидки</small>
+              </label>
+              <label class="field">
+                <span>Себестоимость товара, ₽</span>
+                <input name="costOfGoods" type="number" min="0" step="0.01" value="400" required inputmode="decimal">
+                <small>Закупка или производство одной единицы</small>
+              </label>
+              <label class="field">
+                <span>Комиссия площадки, %</span>
+                <input name="commissionRate" type="number" min="0" max="99.9" step="0.1" value="25" required inputmode="decimal">
+                <small>Процент от цены продажи</small>
+              </label>
+              <label class="field">
+                <span>Логистика, ₽</span>
+                <input name="logisticsCost" type="number" min="0" step="0.01" value="250" required inputmode="decimal">
+                <small>Доставка одного выполненного заказа</small>
+              </label>
+              <label class="field field--wide">
+                <span>Реклама на один заказ, ₽</span>
+                <input name="advertisingCost" type="number" min="0" step="0.01" value="150" required inputmode="decimal">
+                <small>Расходы на продвижение ÷ количество заказов, полученных за тот же период</small>
+              </label>
+            </div>
+          </details>
+
+          <details class="input-details">
+            <summary>
+              <span>Дополнительные расходы</span>
+              <small>Упаковка, хранение, возвраты, налоги и другое</small>
+            </summary>
+            <div class="input-details__body form-grid form-grid--two">
+              <label class="field">
+                <span>Упаковка, ₽</span>
+                <input name="packagingCost" type="number" min="0" step="0.01" value="30" inputmode="decimal">
+              </label>
+              <label class="field">
+                <span>Обработка заказа, ₽</span>
+                <input name="fulfillmentCost" type="number" min="0" step="0.01" value="30" inputmode="decimal">
+                <small>Приёмка, сборка, маркировка или фулфилмент</small>
+              </label>
+              <label class="field">
+                <span>Хранение на заказ, ₽</span>
+                <input name="storageCost" type="number" min="0" step="0.01" value="10" inputmode="decimal">
+              </label>
+              <label class="field">
+                <span>Эквайринг и платежи, %</span>
+                <input name="paymentRate" type="number" min="0" max="99.9" step="0.1" value="1.5" inputmode="decimal">
+                <small>Процент от цены продажи</small>
+              </label>
+              <label class="field">
+                <span>Доля возвратов, %</span>
+                <input name="returnRate" type="number" min="0" max="100" step="0.1" value="5" inputmode="decimal">
+              </label>
+              <label class="field">
+                <span>Расход на один возврат, ₽</span>
+                <input name="returnCost" type="number" min="0" step="0.01" value="250" inputmode="decimal">
+                <small>Обратная логистика, обработка и списание</small>
+              </label>
+              <label class="field">
+                <span>Налог с выручки, %</span>
+                <input name="taxRate" type="number" min="0" max="99.9" step="0.1" value="6" inputmode="decimal">
+              </label>
+              <label class="field">
+                <span>Прочие расходы, ₽</span>
+                <input name="otherVariableCost" type="number" min="0" step="0.01" value="0" inputmode="decimal">
+                <small>На один выполненный заказ</small>
+              </label>
+            </div>
+          </details>
+
+          <details class="input-section" open>
+            <summary>План на месяц</summary>
+            <div class="input-section__body form-grid form-grid--two">
+              <label class="field">
+                <span>Заказов в месяц</span>
+                <input name="monthlyOrders" type="number" min="0" step="1" value="300" inputmode="numeric">
+              </label>
+              <label class="field">
+                <span>Постоянные расходы, ₽</span>
+                <input name="fixedMonthlyCosts" type="number" min="0" step="0.01" value="20000" inputmode="decimal">
+                <small>Зарплаты, сервисы, аренда и другие расходы периода</small>
+              </label>
+            </div>
+          </details>
+
+        </form>
+      </section>
+
+      <section class="results" aria-labelledby="results-title" aria-live="polite">
+        <div class="results-header">
+          <div class="results-identification">
+            <img class="report-product-image" id="report-product-image" alt="" hidden>
+            <div>
+              <h2 id="results-title">Экономика товара</h2>
+              <p class="result-context" id="result-context"></p>
+            </div>
+          </div>
+          <div class="actions" aria-label="Действия с расчётом">
+            <button class="button button--secondary" id="download-report" type="button">Скачать расчёт</button>
+            <button class="icon-button" id="print-report" type="button" aria-label="Распечатать или сохранить в PDF" title="Печать / PDF">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V3h10v5M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2M7 14h10v7H7z"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <p class="result-error" id="result-error" role="status" hidden>Исправьте ошибку во входных данных. Показатели ниже не обновлены.</p>
+
+        <div class="metric-grid">
+          <article class="metric-card metric-card--primary">
+            <span>Прибыль с заказа</span>
+            <strong id="metric-profit">130 ₽</strong>
+            <small>После всех переменных расходов</small>
+          </article>
+          <article class="metric-card">
+            <span>Маржа</span>
+            <strong id="metric-margin">8,7%</strong>
+            <small>Прибыль ÷ цена продажи</small>
+          </article>
+          <article class="metric-card">
+            <span>Прибыль за месяц</span>
+            <strong id="metric-monthly">19 000 ₽</strong>
+            <small id="metric-monthly-note">При 300 заказах и после постоянных расходов</small>
+          </article>
+          <article class="metric-card">
+            <span>Цена безубыточности</span>
+            <strong id="metric-break-even-price">1 307 ₽</strong>
+            <small>Минимальная цена при текущих расходах</small>
+          </article>
+        </div>
+
+        <details class="panel result-panel" open>
+          <summary class="result-summary">
+            <h3 id="calculation-title">Куда уходит цена продажи</h3>
+            <strong class="total-cost" id="total-cost">Всего расходов: 1 370 ₽</strong>
+          </summary>
+          <div class="result-panel__body">
+            <div class="cost-strip" id="cost-strip" aria-label="Доли расходов в цене продажи"></div>
+            <div class="calculation-list" id="calculation-list"></div>
+          </div>
+        </details>
+
+        <details class="panel result-panel" open>
+          <summary class="result-summary">
+            <h3 id="limits-title">Границы безопасности</h3>
+          </summary>
+          <div class="result-panel__body">
+            <dl class="definition-grid">
+              <div>
+                <dt>Допустимая реклама на заказ</dt>
+                <dd id="metric-max-ad">280 ₽</dd>
+                <small id="metric-max-ad-note">При большем расходе заказ станет убыточным</small>
+              </div>
+              <div>
+                <dt>Запас цены</dt>
+                <dd id="metric-safety">193 ₽</dd>
+                <small>Цена минус цена безубыточности</small>
+              </div>
+              <div>
+                <dt>Заказов для покрытия постоянных расходов</dt>
+                <dd id="metric-break-even-orders">154</dd>
+                <small>При неизменной прибыли с заказа</small>
+              </div>
+              <div>
+                <dt>Переменные расходы</dt>
+                <dd id="metric-cost-share">91,3%</dd>
+                <small>Доля всех расходов в цене продажи</small>
+              </div>
+            </dl>
+          </div>
+        </details>
+
+        <details class="panel result-panel" open>
+          <summary class="result-summary">
+            <h3 id="scenario-title">Прибыль при изменении условий</h3>
+          </summary>
+          <div class="result-panel__body">
+            <div class="scenario-chart" id="scenario-chart" aria-label="Сравнение прибыли с заказа по сценариям"></div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col">Сценарий</th>
+                    <th scope="col">Прибыль / заказ</th>
+                    <th scope="col">Маржа</th>
+                    <th scope="col">Статус</th>
+                  </tr>
+                </thead>
+                <tbody id="scenario-table"></tbody>
+              </table>
+            </div>
+          </div>
+        </details>
+
+        <details class="panel result-panel" open>
+          <summary class="result-summary">
+            <h3 id="sensitivity-title">Что сильнее всего снижает прибыль</h3>
+          </summary>
+          <div class="result-panel__body">
+            <div class="sensitivity-chart" id="sensitivity-chart"></div>
+            <p class="panel-note">Показано изменение прибыли с одного заказа относительно базового расчёта.</p>
+          </div>
+        </details>
+
+        <section class="assessment" id="assessment" aria-labelledby="assessment-title">
+          <div class="assessment__heading">
+            <div>
+              <h3 id="assessment-title">Итоговая оценка</h3>
+              <p id="assessment-title-note">Краткая интерпретация введённых данных</p>
+            </div>
+            <strong id="assessment-status">Есть прибыль, но запас ограничен</strong>
+          </div>
+          <div class="assessment-grid">
+            <div>
+              <span>Текущие условия</span>
+              <strong id="assessment-base">130 ₽</strong>
+              <small id="assessment-base-note">8,7% маржи</small>
+            </div>
+            <div>
+              <span>Умеренный стресс</span>
+              <strong id="assessment-moderate">40 ₽</strong>
+              <small>Цена -3%, комиссия +1 п.п., расходы выше</small>
+            </div>
+            <div>
+              <span>Сильный стресс</span>
+              <strong id="assessment-stress">-159 ₽</strong>
+              <small>Цена -10%, комиссия +5 п.п., расходы выше</small>
+            </div>
+          </div>
+          <p class="assessment__text" id="assessment-text"></p>
+          <p class="assessment__note">Это проверка чувствительности, а не прогноз спроса или вероятности сценария.</p>
+        </section>
+
+        <details class="methodology">
+          <summary>Формулы и определения всех показателей</summary>
+          <div class="methodology__body">
+            <dl class="formula-list">
+              <div><dt>Ожидаемые расходы на возвраты</dt><dd>Доля возвратов × расход на один возврат.</dd></div>
+              <div><dt>Переменные расходы</dt><dd>Себестоимость + упаковка + комиссия + логистика + обработка + хранение + эквайринг + ожидаемые возвраты + реклама + налог + прочие расходы.</dd></div>
+              <div><dt>Прибыль с заказа</dt><dd>Цена продажи - переменные расходы.</dd></div>
+              <div><dt>Маржа</dt><dd>Прибыль с заказа ÷ цена продажи × 100%.</dd></div>
+              <div><dt>Цена безубыточности</dt><dd>Все рублёвые расходы ÷ (1 - комиссия - эквайринг - налог). Это цена, при которой прибыль с заказа равна нулю.</dd></div>
+              <div><dt>Допустимая реклама</dt><dd>Прибыль с заказа + текущая реклама на заказ.</dd></div>
+              <div><dt>Запас цены</dt><dd>Текущая цена - цена безубыточности.</dd></div>
+              <div><dt>Прибыль за месяц</dt><dd>Прибыль с заказа × план заказов - постоянные расходы за месяц.</dd></div>
+              <div><dt>Заказы для безубыточности</dt><dd>Постоянные расходы ÷ прибыль с заказа, с округлением вверх. Не рассчитывается, если заказ убыточен.</dd></div>
+              <div><dt>Диагностический статус</dt><dd>«Убыток» - прибыль не положительна; «Низкий запас» - маржа ниже 5%; «Положительно» - базовый расчёт прибыльный, но комбинированный стресс убыточен; «Устойчиво» - оба расчёта положительны. Порог 5% служит предупреждением, а не универсальной нормой.</dd></div>
+            </dl>
+          </div>
+        </details>
+      </section>
+    </div>
+  </main>
+
+  <footer>
+    <p>Этот инструмент - расчётная модель справочного характера, а не гарантия финансового результата. Он не прогнозирует спрос и не заменяет налоговую консультацию. Уточняйте налоговую ставку, тарифы площадки и условия логистики в официальных источниках и у профильных специалистов.</p>
+  </footer>
+
+  <script src="src/calculator.js"></script>
+  <script src="src/app.js"></script>
+</body>
+</html>
