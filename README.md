@@ -1,5 +1,8 @@
 # UnitCalc
 
+![tests](https://github.com/ivanstarodumov/unitcalc/actions/workflows/tests.yml/badge.svg)
+![license](https://img.shields.io/badge/license-MIT-blue.svg)
+
 Бесплатный офлайн-калькулятор unit-экономики для продавцов на маркетплейсах. Он показывает не оборот, а финансовый результат одного выполненного заказа: сколько денег остаётся после себестоимости, комиссии, логистики, рекламы, налогов, возвратов и других расходов.
 
 ![Интерфейс калькулятора UnitCalc](assets/unitcalc-overview.png)
